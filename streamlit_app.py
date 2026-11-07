@@ -520,8 +520,29 @@ def main() -> None:
     with st.expander("How the abnormal return is built"):
         st.markdown(
             "Each rating day is one row, even when several firms move on the same session. "
-            "Mixed days, with an upgrade and a downgrade together, stay out of the means. "
+            "Mixed days, with an upgrade and a downgrade together, stay out of the table and the means. "
             "Initiations and target changes stay out too. Only Finviz's Upgrade and Downgrade stamps count."
+        )
+        st.markdown(
+            "**Date** is the trading session the stamp lands on. "
+            "**Ticker** is the symbol. "
+            "**Direction** is upgrade when that session has at least one Upgrade stamp and no Downgrade stamp, "
+            "and downgrade when it has at least one Downgrade stamp and no Upgrade stamp. "
+            "**Firms** lists the brokers on that stamp, in alphabetical order."
+        )
+        st.markdown(
+            "**Session** is the close-to-close return that day, $R_{i,t}$. "
+            "**Abnormal** is the same session after the market model, $AR_{i,t}$. "
+            "**Prior 5 sessions** is $CAR_i(-5,-1)$, the abnormal returns on the five sessions before the rating. "
+            "**Next 5 sessions** is $CAR_i(1,5)$, sessions $+1$ through $+5$. "
+            "Either cumulative cell reads n/a when any session inside the window is missing, "
+            "which is why a rating from the last few days can show n/a for the next week."
+        )
+        st.markdown(
+            "**Earnings nearby** is Yes when an earnings stamp falls within two trading sessions of the rating, "
+            "counting the rating session. "
+            "**Isolated** is Yes when that ticker has no other rating session within five trading sessions. "
+            "A quiet day, the sample in the charts above, is an isolated rating with Earnings nearby set to No."
         )
         st.markdown("Session return:")
         st.latex(r"R_{i,t} = \frac{P_{i,t}}{P_{i,t-1}} - 1")
