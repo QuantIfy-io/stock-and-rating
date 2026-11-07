@@ -42,7 +42,7 @@ SPECS = ("all", "isolated", "quiet")
 SPEC_LABELS = {
     "all": "All upgrade days",
     "isolated": "Isolated upgrades",
-    "quiet": "Quiet tape",
+    "quiet": "Quiet day",
 }
 
 
@@ -531,5 +531,5 @@ def pct(value: float, digits: int = 2) -> str:
 def describe_mean(stats: pd.Series) -> str:
     return (
         f"{pct(stats['mean'])} across {int(stats['n'])} events "
-        f"in {int(stats['n_tickers'])} names (t {stats['t']:+.2f})"
+        f"in {int(stats['n_tickers'])} tickers (t {stats['t']:+.2f})"
     )

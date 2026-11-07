@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from market_data import MARKET, UNIVERSE, load_warehouse
+from market_data import MARKET, load_warehouse
 from upgrade_engine import (
     WINDOW_LABELS,
     _summarize,
@@ -162,9 +162,9 @@ def _panel_bars(summary: pd.DataFrame) -> go.Figure:
     windows = ["pre5", "day0", "post5"]
     labels = [WINDOW_LABELS[key].replace("Upgrade session", "Rating session") for key in windows]
     series = (
-        ("Quiet-tape upgrades", "quiet", "upgrade", AMBER),
+        ("Quiet-day upgrades", "quiet", "upgrade", AMBER),
         ("Matched quiet days", "quiet", "placebo", TEAL),
-        ("Quiet-tape downgrades", "quiet", "downgrade", RED),
+        ("Quiet-day downgrades", "quiet", "downgrade", RED),
     )
     fig = go.Figure()
     for name, spec, direction, color in series:
@@ -184,7 +184,7 @@ def _panel_bars(summary: pd.DataFrame) -> go.Figure:
         )
     return _style(
         fig,
-        title="Abnormal return around the rating, quiet tape",
+        title="Abnormal return around the rating, quiet day",
         height=460,
         ytitle="Percent",
     )
@@ -193,7 +193,7 @@ def _panel_bars(summary: pd.DataFrame) -> go.Figure:
 def _earnings_bars(events: pd.DataFrame) -> go.Figure:
     upgrades = events[events["direction"] == "upgrade"]
     groups = (
-        ("Quiet tape", upgrades["isolated"] & ~upgrades["earnings_adjacent"], AMBER),
+        ("Quiet day", upgrades["isolated"] & ~upgrades["earnings_adjacent"], AMBER),
         ("Earnings within two sessions", upgrades["earnings_adjacent"], BLUE),
     )
     fig = go.Figure()
@@ -211,7 +211,7 @@ def _earnings_bars(events: pd.DataFrame) -> go.Figure:
         )
     return _style(
         fig,
-        title="Earnings weeks and a quiet tape",
+        title="Earnings weeks and a quiet day",
         height=420,
         ytitle="Percent",
     )
@@ -228,7 +228,7 @@ def _histogram(events: pd.DataFrame, rivian_ar: float) -> go.Figure:
     fig.add_trace(
         go.Histogram(
             x=values,
-            name="Quiet-tape upgrades",
+            name="Quiet-day upgrades",
             marker_color=AMBER,
             nbinsx=28,
             hovertemplate="%{x:.1f}%<extra></extra>",
@@ -236,7 +236,7 @@ def _histogram(events: pd.DataFrame, rivian_ar: float) -> go.Figure:
     )
     fig = _style(
         fig,
-        title="Quiet-tape upgrade sessions",
+        title="Quiet-day upgrade sessions",
         height=420,
         ytitle="Upgrades",
         showlegend=False,
@@ -256,7 +256,7 @@ def _histogram(events: pd.DataFrame, rivian_ar: float) -> go.Figure:
             x=x,
             y=1,
             yref="paper",
-            text="Rivian 2 Nov",
+            text="RIVN 2 Nov",
             showarrow=False,
             xanchor="left",
             yanchor="bottom",
@@ -316,7 +316,7 @@ def _lookup_chart(prices: pd.DataFrame, events: pd.DataFrame, actions: pd.DataFr
     for day in earnings["date"]:
         if pd.Timestamp(day) in indexed.index:
             _mark(fig, pd.Timestamp(day), "", TEAL)
-    return _style(fig, title=f"{UNIVERSE.get(ticker, ticker)} since 2025, indexed to 100", height=460, ytitle="Index, first day = 100")
+    return _style(fig, title=f"{ticker} since 2025, indexed to 100", height=460, ytitle="Index, first day = 100")
 
 
 def _event_table(events: pd.DataFrame) -> pd.DataFrame:
@@ -326,7 +326,6 @@ def _event_table(events: pd.DataFrame) -> pd.DataFrame:
         {
             "Date": show["date"].dt.strftime("%Y-%m-%d"),
             "Ticker": show["ticker"],
-            "Name": show["name"],
             "Direction": show["direction"],
             "Firms": show["firms"],
             "Session": show["raw"].map(lambda v: pct(v)),
@@ -346,7 +345,7 @@ def _metric_caption(stats: pd.Series) -> str:
     return (
         f"Mean {pct(stats['mean'])}. Median {pct(stats['median'])}. "
         f"{stats['hit']:.0%} finished positive. "
-        f"t {stats['t']:+.1f} across {int(stats['n'])} events in {int(stats['n_tickers'])} names."
+        f"t {stats['t']:+.1f} across {int(stats['n'])} events in {int(stats['n_tickers'])} tickers."
     )
 
 
@@ -374,7 +373,7 @@ def main() -> None:
     st.title("The upgrade and the next week")
     st.markdown(
         "Schwab's market update on **3 Nov 2026** put two upgrades in one breath: "
-        "Rivian climbed 8% on an upgrade to Buy from UBS, and CrowdStrike fell 3.5% "
+        "RIVN climbed 8% on an upgrade to Buy from UBS, and CRWD fell 3.5% "
         "despite an upgrade to Buy from Deutsche Bank. "
         f"[Listen to the update]({SCHWAB_UPDATE})."
     )
@@ -396,7 +395,7 @@ def main() -> None:
         marks.append((pd.Timestamp("2026-10-30"), "Jefferies", AMBER, 0.62, "right"))
         marks.append((pd.Timestamp("2026-11-02"), "UBS", RED, 0.30, "right"))
         st.plotly_chart(
-            _price_chart(rivn_index, "RIVN", AMBER, "Rivian and SPY, indexed to 100", marks),
+            _price_chart(rivn_index, "RIVN", AMBER, "RIVN and SPY, indexed to 100", marks),
             width="stretch",
         )
     with right:
@@ -405,41 +404,41 @@ def main() -> None:
             (pd.Timestamp("2026-11-02"), "Deutsche Bank", RED, 0.55, "right"),
         ]
         st.plotly_chart(
-            _price_chart(crwd_index, "CRWD", BLUE, "CrowdStrike and SPY, indexed to 100", crwd_marks),
+            _price_chart(crwd_index, "CRWD", BLUE, "CRWD and SPY, indexed to 100", crwd_marks),
             width="stretch",
         )
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Rivian session", pct(tape["rivn_mon"]))
-    m2.metric("Rivian abnormal", pct(rivn.get("ar0", np.nan)))
-    m3.metric("CrowdStrike session", pct(tape["crwd_mon"]))
-    m4.metric("CrowdStrike abnormal", pct(crwd.get("ar0", np.nan)))
+    m1.metric("RIVN session", pct(tape["rivn_mon"]))
+    m2.metric("RIVN abnormal", pct(rivn.get("ar0", np.nan)))
+    m3.metric("CRWD session", pct(tape["crwd_mon"]))
+    m4.metric("CRWD abnormal", pct(crwd.get("ar0", np.nan)))
     st.caption(
         f"Close to close, with SPY {pct(tape['spy_mon'])} that session. "
         f"Schwab's figures were 8% and 3.5%. "
-        f"Rivian Q3 {tape['rivn_earnings_period']} printed on "
+        f"RIVN Q3 {tape['rivn_earnings_period']} printed on "
         f"{pd.Timestamp(earn_day).date() if earn_day is not None else 'n/a'}, "
         f"and the stock finished {pct(tape['rivn_earnings_raw'])}. "
-        f"Jefferies upgraded Rivian the next session "
+        f"Jefferies upgraded RIVN the next session "
         f"({pct((case.get('rivn_prior') or {}).get('raw', np.nan))} close to close, "
         f"abnormal {pct((case.get('rivn_prior') or {}).get('ar0', np.nan))}). "
         "Those two upgrades are one session apart, and earnings sits inside two sessions of both, "
-        "so Monday is not a quiet-tape event. "
-        f"By Friday 6 Nov Rivian closed at ${tape['rivn_close_fri']:.2f}, "
+        "so Monday is not a quiet-day event. "
+        f"By Friday 6 Nov RIVN closed at ${tape['rivn_close_fri']:.2f}, "
         f"{pct(tape['rivn_fri_from_mon'])} from Monday's close. "
         "The five-session window after Monday is not complete yet."
     )
     if rivn:
         st.caption(
-            f"Rivian's market-model beta into that session was {rivn['beta']:.2f}. "
+            f"The RIVN market-model beta into that session was {rivn['beta']:.2f}. "
             "The abnormal return is the session return minus that beta times SPY, "
             "with the fit taken from sessions 120 through 21 before the rating."
         )
 
     st.subheader("The other upgrades")
     st.markdown(
-        f"A **quiet tape** is an upgrade with no other rating within five sessions and no earnings "
-        f"within two. That sample is **{int(quiet_day['n'])} upgrades in {int(quiet_day['n_tickers'])} names**, "
+        f"A **quiet day** is an upgrade with no other rating within five sessions and no earnings "
+        f"within two. That sample is **{int(quiet_day['n'])} upgrades in {int(quiet_day['n_tickers'])} tickers**, "
         f"from the Finviz stamps on {meta.get('n_tickers', 50)} liquid stocks."
     )
     c1, c2, c3 = st.columns(3)
@@ -463,7 +462,7 @@ def main() -> None:
         f"When another rating lands in the same week, the five sessions before the upgrade "
         f"are already **{pct(clustered_pre['mean'])}** abnormal "
         f"(t {clustered_pre['t']:+.1f}, {int(clustered_pre['n'])} events). "
-        f"Downgrade sessions on a quiet tape average **{pct(down_day['mean'])}** "
+        f"Downgrade sessions on a quiet day average **{pct(down_day['mean'])}** "
         f"(t {down_day['t']:+.1f}). The next five sessions average **{pct(down_post['mean'])}** "
         f"(t {down_post['t']:+.1f})."
     )
@@ -473,7 +472,7 @@ def main() -> None:
         "Bars are the equal-weighted mean abnormal return. "
         "Whiskers are a 95% range from a ticker-clustered standard error. "
         "A whisker through zero is a mean that sits inside a flat range. "
-        "Matched quiet days are a session about three weeks earlier in the same name, "
+        "Matched quiet days are a session about three weeks earlier in the same ticker, "
         "with no rating within five sessions and no earnings within two."
     )
 
@@ -485,34 +484,33 @@ def main() -> None:
         st.caption(
             f"Earnings weeks: session mean {pct(earn_day_stats['mean'])}, "
             f"median {pct(earn_day_stats['median'])}, t {earn_day_stats['t']:+.1f}. "
-            f"Quiet tape: session mean {pct(quiet_day['mean'])}, median {pct(quiet_day['median'])}. "
+            f"Quiet day: session mean {pct(quiet_day['mean'])}, median {pct(quiet_day['median'])}. "
             f"The next five sessions are {pct(earn_post['mean'])} after earnings weeks "
-            f"(t {earn_post['t']:+.1f}) and {pct(quiet_post['mean'])} on the quiet tape."
+            f"(t {earn_post['t']:+.1f}) and {pct(quiet_post['mean'])} on the quiet day."
         )
     with chart_right:
         st.plotly_chart(_histogram(events, float(rivn.get("ar0", np.nan))), width="stretch")
         st.caption(
-            "The blue line is Rivian's 2 Nov abnormal return. "
-            "That day is outside the quiet-tape sample, because Jefferies had upgraded it the session before "
+            "The blue line is the RIVN 2 Nov abnormal return. "
+            "That day is outside the quiet-day sample, because Jefferies had upgraded it the session before "
             "and the Q3 print was two sessions before."
         )
 
-    st.subheader("Look up a name")
     names = sorted(events["ticker"].unique())
     default = names.index("RIVN") if "RIVN" in names else 0
     ticker = st.selectbox(
         "Ticker",
         names,
         index=default,
-        format_func=lambda symbol: f"{symbol} — {UNIVERSE.get(symbol, symbol)}",
+        format_func=lambda symbol: symbol,
     )
     st.plotly_chart(_lookup_chart(prices, events, actions, ticker), width="stretch")
     st.caption("Triangles are rating days. Teal lines are earnings stamps. The index starts at 100 on the first session of 2025.")
 
     table = _event_table(events)
-    scope = st.radio("Table", ("This name", "All names"), horizontal=True)
+    scope = st.radio("Table", ("This ticker", "All tickers"), horizontal=True)
     direction = st.radio("Direction", ("Upgrades", "Downgrades", "Both"), horizontal=True)
-    view = table if scope == "All names" else table[table["Ticker"] == ticker]
+    view = table if scope == "All tickers" else table[table["Ticker"] == ticker]
     if direction == "Upgrades":
         view = view[view["Direction"] == "upgrade"]
     elif direction == "Downgrades":
@@ -535,7 +533,7 @@ def main() -> None:
         st.latex(r"CAR_i(t_1,t_2) = \sum_{t=t_1}^{t_2} AR_{i,t}")
         st.markdown(
             "The next-week test uses $CAR_i(1,5)$. A window that is not fully printed yet, "
-            "including Rivian's week after 2 Nov, is left out of that mean."
+            "including the RIVN week after 2 Nov, is left out of that mean."
         )
         st.markdown("The controlled comparison stacks each upgrade with its matched quiet day:")
         st.latex(
@@ -543,10 +541,10 @@ def main() -> None:
         )
         st.markdown(
             "$b$ is the extra abnormal return lined up with the upgrade after the prior week "
-            "and an earnings flag. On the quiet tape the earnings flag does not vary, so it drops out. "
+            "and an earnings flag. On the quiet day the earnings flag does not vary, so it drops out. "
             "Standard errors are clustered by ticker. "
             "Finviz's chart stamps are the ratings it attaches to the price chart, not a full broker file. "
-            "The universe is today's liquid names, so the history is not a point-in-time index."
+            "The universe is today's liquid tickers, so the history is not a point-in-time index."
         )
         st.caption(
             f"Warehouse {meta.get('price_start')} to {meta.get('price_end')}. "

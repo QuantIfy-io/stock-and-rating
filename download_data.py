@@ -65,7 +65,7 @@ def main() -> None:
     meta = write_warehouse(bundle)
     print(
         f"Prices {meta['price_start']} → {meta['price_end']} · "
-        f"{meta['n_tickers']} names · {meta['n_rating_rows']} rating rows · "
+        f"{meta['n_tickers']} tickers · {meta['n_rating_rows']} rating rows · "
         f"{meta['n_earnings_rows']} earnings"
     )
     study = build_study(bundle["prices"], bundle["actions"])
