@@ -1,0 +1,10 @@
+{
+  "written_at": "2026-11-07T14:42:21-05:00",
+  "price_start": "2023-06-01",
+  "price_end": "2026-11-06",
+  "n_price_rows": 44013,
+  "n_tickers": 50,
+  "n_rating_rows": 776,
+  "n_earnings_rows": 442,
+  "source": "Finviz chart events for ratings and earnings; Nasdaq historical closes; SPY is the market"
+}

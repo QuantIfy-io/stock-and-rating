@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.streamlit/secrets.toml
+linkedin-post.md
+*-cover.png
+*-cover-source.jpg
